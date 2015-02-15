@@ -18,7 +18,7 @@ function Core() {
         fileSystemManager,
         jobManager,
         metricsManager,
-        schedulerManager;
+        scheduleManager;
 
     /* Loading Modules */
     fileSystemManager = new (require("./lib/fileSystemManager"))();
@@ -30,7 +30,7 @@ function Core() {
     configurationManager = new (require("./lib/configurationManager"))();
     deploymentManager = new (require("./lib/deploymentManager"))(jobManager);
     metricsManager = new (require("./lib/metricsManager"))(fileSystemManager);
-    schedulerManager = new (require("./lib/schedulerManager"))();
+    scheduleManager = new (require("./lib/scheduleManager"))();
 
     /* Getters Section */
 
@@ -93,8 +93,8 @@ function Core() {
      * @public
      * @return {Object} Scheduler Manager Object.
      */
-    this.getSchedulerManager = function () {
-        return schedulerManager;
+    this.getScheduleManager = function () {
+        return scheduleManager;
     };
 
     /**

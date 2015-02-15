@@ -12,11 +12,13 @@ var core = new Core();
 describe("Connection Manager", function () {
 
     var serverURL = "https://wwcl-server-mastayoda1.c9.io";
+    var serverIP = "192.168.1.102";
 
     describe("#setServerURL()", function () {
         it("Should set the server URL", function () {
 
             var obj = core.getConnectionManager();
+            obj.setServerURL(serverIP);
             obj.setServerURL(serverURL);
 
         });

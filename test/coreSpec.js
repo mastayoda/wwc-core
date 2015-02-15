@@ -82,10 +82,10 @@ describe("Core", function () {
 
         });
     });
-    describe("#getSchedulerManager()", function () {
-        it("should return the scheduler manager object", function () {
+    describe("#getScheduleManager()", function () {
+        it("should return the schedule manager object", function () {
 
-            var results = core.getSchedulerManager();
+            var results = core.getScheduleManager();
 
             /* Validation */
             expect(results).to.not.be.equal(null);
