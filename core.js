@@ -18,11 +18,13 @@ function Core() {
         fileSystemManager,
         jobManager,
         metricsManager,
-        scheduleManager;
+        scheduleManager,
+        sandBoxManager;
 
     /* Loading Modules */
+    sandBoxManager = new (require("./lib/sandBoxManager"))();
     fileSystemManager = new (require("./lib/fileSystemManager"))();
-    connectionManager = new (require("./lib/connectionManager"))();
+    connectionManager = new (require("./lib/connectionManager"))(sandBoxManager);
     /* Connection Manager for this communicator */
     jobManager = new (require("./lib/jobManager"))(fileSystemManager);
     faultManager = new (require("./lib/faultManager"))(jobManager);
@@ -115,6 +117,14 @@ function Core() {
         return configurationManager;
     };
 
+    /**
+     * Getter that returns SandBox Manager Core Object.
+     * @public
+     * @return {Object} SandBox Manager Object.
+     */
+    this.getSandBoxManager = function () {
+        return sandBoxManager;
+    };
 
 }
 

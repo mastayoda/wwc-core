@@ -16,7 +16,7 @@ describe("Core", function () {
 
             var results = Object.keys(core).length;
             /* Validation */
-            expect(results).to.be.equal(9);
+            expect(results).to.be.equal(10);
 
         });
     });
@@ -110,6 +110,19 @@ describe("Core", function () {
         it("should return the configuration manager object", function () {
 
             var results = core.getConfigurationManager();
+
+            /* Validation */
+            expect(results).to.not.be.equal(null);
+            expect(results).to.not.be.equal(undefined);
+            expect(results).to.be.an('object');
+
+        });
+    });
+
+    describe("#getSandBoxManager()", function () {
+        it("should return the sandbox manager object", function () {
+
+            var results = core.getSandBoxManager();
 
             /* Validation */
             expect(results).to.not.be.equal(null);
