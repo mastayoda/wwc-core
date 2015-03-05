@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - lib/jobManager.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>lib/jobManager.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">74.57</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">465</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">25.99</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.62</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * Created by: victor on 2/1/15.
+ * Source: jobManager.js
+ * Author: victor
+ * Description:
+ *
+ */
+var emitter = require(&#039;events&#039;).EventEmitter, /* Event Emitter Module */
+    util = require(&#039;util&#039;),
+    SortedArray = require(&quot;collections/sorted-array&quot;);
+
+function JobManager() {
+    &quot;use strict&quot;;
+
+    var self = this;
+
+};
+
+/*************************** Sub Classes ***********************************/
+
+/**
+ * The object enumerator for the Job Types.
+ * @public
+ * {Object}
+ */
+JobManager.JobTypes = {
+    STREAMING: &quot;_STREAM&quot;,
+    BATCH: &quot;_BATCH&quot;
+};
+/**
+ * The object enumerator for the Job Types.
+ * @public
+ * {Object}
+ */
+JobManager.JobStatus = {
+    CREATED: &quot;_CREATED&quot;,
+    DEPLOYED: &quot;_DEPLOYED&quot;,
+    EXECUTING: &quot;_EXECUTING&quot;,
+    FAILED: &quot;_FAILED&quot;,
+    ABORTED: &quot;_ABORTED&quot;,
+    COMPLETED: &quot;_COMPLETED&quot;
+};
+/**
+ * The object enumerator for the Job Types.
+ * @public
+ * {Object}
+ */
+JobManager.JobParameter = function () {
+
+    var data = null;/* The Parameter Data */
+    /**
+     * Set the parameter data.
+     * @public
+     * @d {any type} data to be added.
+     * @return {any type} return the provided parameter data.
+     */
+    this.setData = function (d) {
+        data = d;
+    };
+};
+/**
+ * The object enumerator for the Job Types.
+ * @public
+ * {Object}
+ */
+JobManager.JobEvent = function () {
+
+    var time = null;/* The event time */
+    var status = null; /* The event status */
+
+    /* Set the job event time.
+     * @public
+     * @t {Date} date to be added.
+     * @return {Date} return the provided date.
+     */
+    this.setTime = function (t) {
+        /* Validating socket id */
+        if (!(t instanceof Date)) {
+            throw new Error(&quot;The Time must be instance of Date&quot;);
+        }
+        return time = t;
+    };
+
+    /* Set the job event status.
+     * @public
+     * @t {JobStatus} status to be set.
+     * @return {JobStatus} return the provided status.
+     */
+    this.setStatus = function (s) {
+        /* Validating status */
+        if (!(s instanceof JobManager.JobStatus)) {
+            throw new Error(&quot;The Status must be instance of JobManager.JobStatus&quot;);
+        }
+        return status = s;
+    };
+
+    /* Get the job event time.
+     * @public
+     * @return {Date} return the date.
+     */
+    this.getTime = function () {
+        return time;
+    };
+
+    /* Get the job event status.
+     * @public
+     * @return {JobStatus} return the status.
+     */
+    this.setStatus = function () {
+        return status;
+    };
+
+
+};
+/**
+ * Description
+ * @public
+ * @return {Object} An instance of a Job object type.
+ */
+JobManager.Job = function () {
+
+    var Chance = require(&#039;chance&#039;),
+        chance = new Chance(),
+        FileSystemManager = require(&quot;./fileSystemManager&quot;),
+        SchedulerManager = (require(&quot;../lib/scheduleManager&quot;)),
+        AdvancedArray = require(&quot;collections/shim-array&quot;);
+        check = require(&#039;syntax-error&#039;),
+        validator = require(&#039;validator&#039;);
+
+    var jobGUID = null, /* Global Unique Job Identifier */
+        jobParentSocketID = null, /* The Socket ID where this job comes from. */
+    /* Assigned at deployment time. */
+        jobType = null, /* The Job Type, Enumerator in the JobManager.JobTypes */
+        jobParamsArePartitioned = false, /* Determine if the parameters are partitioned (Not Unique
+     /* and must be distributed among Sandboxes) */
+        jobApplication = null, /* The job&#039;s application code */
+        jobParameters = null, /* The job&#039;s application parameters */
+        jobSchedule = null, /* Job Schedule (distribution, connections, and pipelines) */
+        jobRemoteDisks = null, /* Job Remote Disks for file access */
+        jobName = null, /* The name of the current job */
+        jobDescription = null,/* The description of the current job */
+        jobStatus = null, /* The Job&#039;s current status */
+        jobEvents = null; /* Job time events */
+
+    /* Default Initializations */
+    jobGUID = chance.guid();
+    jobName = &quot;Job-&quot; + jobGUID + &quot;-&quot; + new Date().toLocaleString();
+    jobDescription = &quot;&quot;;
+    jobStatus = JobManager.JobStatus.CREATED;
+    jobEvents = new AdvancedArray();
+
+    /************** SETTERS ****************/
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobParentSocketID = function (socketID) {
+        /* Validating socket id */
+        if (typeof socketID != &quot;number&quot;) {
+            throw new Error(&quot;The JobParentSocketID must be a valid integer&quot;);
+        }
+        return jobParentSocketID = socketID;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobType = function (type) {
+        /* Validating URL */
+        if (typeof  type != &quot;string&quot;) {
+            throw new Error(&quot;The JobType must be a valid STRING enumerated in JobManager.JobTypes&quot;);
+        }
+        else if (type != JobManager.JobTypes.BATCH &amp;&amp; type != JobManager.JobTypes.STREAMING) {
+            throw new Error(&quot;The JobType must be a valid type enumerated in JobManager.JobTypes&quot;);
+        }
+
+        return jobType = type;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobParamArePartitioned = function (ispartitioned) {
+        /* Validating boolean */
+        if (typeof ispartitioned != &quot;boolean&quot;) {
+            throw new Error(&quot;JobIsPartitioned must be a valid boolean&quot;);
+        }
+        return jobParamsArePartitioned = ispartitioned;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobApplication = function (application) {
+
+        /* Validating application code */
+        if (typeof  application != &quot;string&quot;) {
+            throw new Error(&quot;The jobApplication must be a valid STRING source.&quot;);
+        }
+
+        /* Validating Syntax correctness */
+        var err = check(application, null);
+        if (err) {
+            throw new Error(err);
+        }
+
+        return jobApplication = application;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobParameters = function (parameters) {
+
+        /* Validating parameters code: must be a JSON object */
+        if (parameters instanceof JobManager.JobParameter) {
+            return jobParameters = parameters;
+        }
+        else {
+            throw new Error(&quot;The jobParameters must be an instance of jobManager.JobParameter&quot;);
+        }
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobSchedule = function (schedule) {
+
+        /* Validating scheduler: must be an object */
+        if (schedule instanceof SchedulerManager.Schedule) {
+            return jobSchedule = schedule;
+        }
+        else {
+            throw new Error(&quot;The jobSchedule must be an instance of schedulerManager.Schedule&quot;);
+        }
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobRemoteDisks = function (disks) {
+
+        /* Validating disks: must be an array if RemoteDisk */
+        if ((disks instanceof Array)) {
+            for(i=0;i&lt;disks.length;i++)
+            {
+                if(!(disks[i] instanceof FileSystemManager.RemoteDisk))
+                {
+                    throw new Error(&quot;All elements in the array must be instance of FileSystemManager.RemoteDisk&quot;);
+                }
+            }
+        }
+        else
+        {
+            throw new Error(&quot;The jobRemoteDisks must be an array containing instances of FileSystemManager.RemoteDisk&quot;);
+        }
+
+        return jobRemoteDisks = disks;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobName = function (name) {
+
+        /* Validating Job&#039;s name */
+        if (typeof  name != &quot;string&quot;) {
+            throw new Error(&quot;The jobName must be a valid STRING.&quot;);
+        }
+
+        return jobName = name;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.setJobDescription = function (description) {
+
+        /* Validating Job Description */
+        if (typeof  description != &quot;string&quot;) {
+            throw new Error(&quot;The jobDescription must be a valid STRING.&quot;);
+        }
+
+        return jobDescription = description;
+    };
+
+    /* Set the job status.
+     * @public
+     * @t {JobStatus} status to be set.
+     * @return {JobStatus} return the provided status.
+     */
+    this.setJobStatus = function (status) {
+        /* Validating status */
+        if (!(status instanceof JobManager.JobStatus)) {
+            throw new Error(&quot;The Status must be instance of JobManager.JobStatus&quot;);
+        }
+        return jobStatus = status;
+    };
+
+    /* Adds the new event.
+     * @public
+     * @event {JobEvent} Event to be added.
+     * @return {JobEvent} return the provided event.
+     */
+    this.addJobEvent= function (event) {
+        /* Validating status */
+        if (!(event instanceof JobManager.JobEvent)) {
+            throw new Error(&quot;The Event must be instance of JobManager.JobEvent&quot;);
+        }
+        return jobEvents.push(event);
+    };
+
+    /************** GETTERS ****************/
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobGUID = function () {
+
+        return jobGUID;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobParentSocketID = function () {
+
+        return jobParentSocketID;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobType = function () {
+        /* Validating URL */
+        return jobType;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobIsPartitioned = function () {
+
+        return jobIsPartitioned;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobApplication = function () {
+
+        return jobApplication;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobParameters = function () {
+
+        return jobParameters;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobRemoteDisks = function () {
+
+        return jobRemoteDisks;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobScheduler = function () {
+
+        return jobSchedule;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobName = function () {
+
+        return jobName;
+    };
+
+    /**
+     * Description
+     * @public
+     * @
+     * @return {type} Description
+     */
+    this.getJobDescription = function (description) {
+
+        return jobDescription;
+    };
+
+    /* Get the job status.
+     * @public
+     * @return {JobStatus} return the job&#039;s status.
+     */
+    this.getJobStatus = function (status) {
+        return jobStatus;
+    };
+
+    /* Gets the event list.
+     * @public
+     * @return {Array of JobEvent} return the array of events in this job.
+     */
+    this.getJobEvents= function () {
+        return jobEvents.toArray();
+    };
+
+};
+
+
+/* extend the EventEmitter class using our Job Manager class */
+util.inherits(JobManager, emitter);
+/* we specify that this module is a reference to the Job Manager class */
+module.exports = JobManager;</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

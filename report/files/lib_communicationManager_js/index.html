@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - lib/communicationManager.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>lib/communicationManager.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">81.40</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">216</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">8.78</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">0.49</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * Created by: victor on 2/1/15.
+ * Source: communicationManager.js
+ * Author: victor
+ * Description: The communication manager is responsible of managing all the WWC network
+ *              operations. This includes, add, modify, and remove sandboxes, this is, keep
+ *              track of the global state of the WWC sandBoxes,maintain communication with the server,
+ *              and socket states. It will also manage new socket.io connections, new RTC connections,
+ *              receive, and send data through the network.
+ */
+var emitter = require(&#039;events&#039;).EventEmitter, /* Event Emitter Module */
+    util = require(&#039;util&#039;);
+/* NodeJS Utils Module */
+
+function CommunicationManager(connectionManager, jobManager, faultManager) {
+    &quot;use strict&quot;;
+
+    var self = this;
+
+    /*************************** ADD LISTENER METHODS *********************************/
+    {
+
+
+        /**
+         * Description.
+         * @public
+         * @listener {function} Provided function listener, Does not contains parameters.
+         */
+        self.addConnectionListener = function (listener) {
+
+            /* Binding the event to the communication manager */
+            connectionManager.bindConnectEmiter(listener);
+        };
+
+        /**
+         * Description.
+         * @public
+         * @listener {function} Provided function listener, Does not contains parameters.
+         */
+        self.addDisconnectionListener = function (listener) {
+
+            /* Binding the event to the communication manager */
+            connectionManager.binDisconnectEmiter(listener);
+        };
+
+
+        /**
+         * Description.
+         * @public
+         * @listener {function} Provided function listener, Does not contains parameters.
+         */
+        self.addReconnectionListener = function (listener) {
+
+            /* Binding the event to the communication manager */
+            connectionManager.bindReconnectEmiter(listener);
+        };
+
+
+        /**
+         * Adds an event listener to be executed when a new sandBox is added(connected).
+         * @public
+         * @listener {function} Provided function listener, must have at least 1 parameter for
+         *                      just added SandBox.Additional parameters will be ignored.
+         */
+        self.addSandBoxConnectedListener = function (listener) {
+
+            /* Binding the event to the communication manager */
+            connectionManager.bindSandBoxConnectedEmiter(listener);
+        };
+
+        /**
+         * Adds an event listener to be executed when a sandBox is removed(disconnected).
+         * @public
+         * @listener {function} Provided function listener, must have at least 1 parameter for
+         *                      just removed SandBox.Additional parameters will be ignored.
+         */
+        self.addSandBoxDisconnectedListener = function (listener) {
+
+            /* Binding the event to the communication manager */
+            connectionManager.bindSandBoxDisconnectedEmiter(listener);
+        };
+
+        /**
+         * Description
+         * @public
+         * @listener {function} Provided function listener, must have at least 1 parameter for
+         *                      the details and results object.
+         */
+        self.addJobExecutionResultsListener = function (listener) {
+
+            /* Binding the event to the communication manager */
+            self.on(&quot;jobExecutionResponse&quot;, listener);
+        };
+
+        /**
+         * Description
+         * @public
+         * @listener {function} Provided function listener, must have at least 1 parameter for
+         *                      the details object.
+         */
+        self.addJobExecutionErrorResultsListener = function (listener) {
+
+            /* Binding the event to the communication manager */
+            self.on(&quot;jobExecutionErrorResponse&quot;, listener);
+        };
+    }
+    /*************************** RESULTS LISTENER HANDLERS ****************************/
+    {
+        /**
+         * Description
+         * @private
+         * @results {function} Description
+         */
+        var jobExecutionResultsListener = function(results) {
+
+            /* Details Object */
+            var details = {jobID: 0, sndbox: 0, results: 0};
+
+            /* TODO: Handle Arriving Results Here */
+
+            /* Emiting event if present */
+            self.emit(&quot;jobExecutionResponse&quot;, details);
+        }
+
+        /* Binding the event to the communication manager */
+        connectionManager.bindJobExecutionResponseEmiter(jobExecutionResultsListener);
+
+        /**
+         * Description
+         * @private
+         * @results {function} Description
+         */
+        var jobExecutionErrorResultsListener = function(results) {
+
+            /* TODO: Handle Arriving Results Here */
+        }
+
+        /* Binding the event to the communication manager */
+        connectionManager.bindJobExecutionErrorResponseEmiter(jobExecutionErrorResultsListener);
+    }
+    /*************************** REMOVE LISTENER METHODS ******************************/
+    {
+        /**
+         * Description
+         * @public
+         * @listener {function}
+         */
+        self.removeConnectionListener = function (listener) {
+
+            /* Unbinding the event to the communication manager */
+            connectionManager.unbindConnectEmiter(listener);
+        };
+
+        /**
+         * Description
+         * @public
+         * @listener {function}
+         */
+        self.removeDisconnectionListener = function (listener) {
+
+            /* Unbinding the event to the communication manager */
+            connectionManager.unbinDisconnectEmiter(listener);
+        };
+
+        /**
+         * Description
+         * @public
+         * @listener {function}
+         */
+        self.removeReconnectionListener = function (listener) {
+
+            /* Unbinding the event to the communication manager */
+            connectionManager.unbindReconnectEmiter(listener);
+        };
+
+        /**
+         * Removes the event listener that executes when a sandBox is added(Connected).
+         * @public
+         * @listener {function}
+         */
+        self.removeSandBoxConnectedListener = function (listener) {
+
+            /* Unbinding the event to the communication manager */
+            connectionManager.unbindSandBoxConnectedEmiter(listener);
+        };
+
+        /**
+         * Removes the event listener that executes when a sandBox is removed(disconnected).
+         * @public
+         * @listener {function}
+         */
+        self.removeSandBoxDisconnectedListener = function (listener) {
+
+            /* Unbinding the event to the communication manager */
+            connectionManager.unbindSandBoxDisconnectedEmiter(listener);
+        };
+
+        /**
+         * TODO: Description
+         * @private
+         * @listener {function}
+         */
+        var removeJobExecutionResultsListener = function(listener) {
+
+            /* Unbinding the event to the communication manager */
+            connectionManager.unbindJobExecutionResponseEmiter(listener);
+        };
+
+        /**
+         * TODO: Description
+         * @private
+         * @listener {function}
+         */
+        var removeJobExecutionErrorResultsListener = function(listener) {
+
+            /* Unbinding the event to the communication manager */
+            connectionManager.unbindJobExecutionErrorResponseEmiter(listener);
+        };
+
+    }
+}
+
+/* extend the EventEmitter class using our Communication Manager class */
+util.inherits(CommunicationManager, emitter);
+/* we specify that this module is a reference to the Communication Manager class */
+module.exports = CommunicationManager;</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>
